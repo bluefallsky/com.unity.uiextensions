@@ -8,9 +8,13 @@
 /// Remember that for radial and diamond gradients, colors are applied per-vertex so if you have multiple points on your gradient where the color changes and there aren't enough vertices, you won't see all of the colors.
 /// </summary>
 using System;
-using System.Buffers;
 using System.Collections.Generic;
+#if UNITY_2021_2_OR_NEWER
+using System.Buffers;
+#endif
+#if UNITY_2021_1_OR_NEWER
 using UnityEngine.Pool;
+#endif
 
 namespace UnityEngine.UI.Extensions
 {
@@ -108,7 +112,11 @@ namespace UnityEngine.UI.Extensions
             if (!IsActive() || helper.currentVertCount == 0)
                 return;
 
+#if UNITY_2021_1_OR_NEWER
             List<UIVertex> _vertexList = ListPool<UIVertex>.Get();
+#else
+            List<UIVertex> _vertexList = new List<UIVertex>();
+#endif
 
             helper.GetUIVertexStream(_vertexList);
 
@@ -244,7 +252,9 @@ namespace UnityEngine.UI.Extensions
                     break;
             }
 
+#if UNITY_2021_1_OR_NEWER
             ListPool<UIVertex>.Release(_vertexList);
+#endif
         }
 
         Rect GetBounds(List<UIVertex> vertices)
@@ -271,7 +281,11 @@ namespace UnityEngine.UI.Extensions
 
         void SplitTrianglesAtGradientStops(List<UIVertex> _vertexList, Rect bounds, float zoomOffset, VertexHelper helper)
         {
+#if UNITY_2021_1_OR_NEWER
             List<float> stops = FindStops(zoomOffset, bounds, ListPool<float>.Get());
+#else
+            List<float> stops = FindStops(zoomOffset, bounds, new List<float>());
+#endif
             if (stops.Count > 0)
             {
                 helper.Clear();
@@ -279,13 +293,23 @@ namespace UnityEngine.UI.Extensions
                 int nCount = _vertexList.Count;
                 for (int i = 0; i < nCount; i += 3)
                 {
+#if UNITY_2021_2_OR_NEWER
                     var positions = ArrayPool<float>.Shared.Rent(3);
+#else
+                    var positions = new float[3];
+#endif
                     
                     GetPositions(_vertexList, i, ref positions);
                     
+#if UNITY_2021_1_OR_NEWER
                     List<int> originIndices = ListPool<int>.Get();
                     List<UIVertex> starts = ListPool<UIVertex>.Get();
                     List<UIVertex> ends = ListPool<UIVertex>.Get();
+#else
+                    List<int> originIndices = new List<int>(3);
+                    List<UIVertex> starts = new List<UIVertex>(3);
+                    List<UIVertex> ends = new List<UIVertex>(2);
+#endif
 
                     for (int s = 0; s < stops.Count; s++)
                     {
@@ -414,13 +438,19 @@ namespace UnityEngine.UI.Extensions
                         helper.AddTriangle(vertexCount - 3, vertexCount - 2, vertexCount - 1);
                     }
 
+#if UNITY_2021_2_OR_NEWER
                     ArrayPool<float>.Shared.Return(positions);
+#endif
+#if UNITY_2021_1_OR_NEWER
                     ListPool<int>.Release(originIndices);
                     ListPool<UIVertex>.Release(starts);
                     ListPool<UIVertex>.Release(ends);
+#endif
                 }
             }
+#if UNITY_2021_1_OR_NEWER
             ListPool<float>.Release(stops);
+#endif
         }
 
         void GetPositions(List<UIVertex> _vertexList, int index, ref float[] positions)
