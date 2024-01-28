@@ -4,7 +4,7 @@ using UnityEngine.UI.Extensions;
 public class Gradient2OptimizeLoopAnimation : MonoBehaviour
 {
     public Gradient2Optimized target;
-    public float duration = 1.0f;
+    public float duration = 2.0f;
     public AnimationCurve curve;
     private float _current;
 
