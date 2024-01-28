@@ -473,7 +473,13 @@ namespace UnityEngine.UI.Extensions
                 size = bounds.height;
             }
 
-            stops.Sort();
+            stops.Sort((x, y) =>
+            {
+                if (x > y) return 1;
+                if (x == y) return 0;
+                return -1;
+            });
+            
             for (int i = 0; i < stops.Count; i++)
             {
                 stops[i] = (stops[i] * size) + min;
