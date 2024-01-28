@@ -9,6 +9,7 @@
 /// </summary>
 using System;
 using System.Collections.Generic;
+using UnityEngine.Pool;
 
 namespace UnityEngine.UI.Extensions
 {
@@ -103,7 +104,7 @@ namespace UnityEngine.UI.Extensions
             if (!IsActive() || helper.currentVertCount == 0)
                 return;
 
-            List<UIVertex> _vertexList = new List<UIVertex>();
+            List<UIVertex> _vertexList = ListPool<UIVertex>.Get();
 
             helper.GetUIVertexStream(_vertexList);
 
@@ -238,6 +239,8 @@ namespace UnityEngine.UI.Extensions
                     }
                     break;
             }
+
+            ListPool<UIVertex>.Release(_vertexList);
         }
 
         Rect GetBounds(List<UIVertex> vertices)
@@ -264,7 +267,7 @@ namespace UnityEngine.UI.Extensions
 
         void SplitTrianglesAtGradientStops(List<UIVertex> _vertexList, Rect bounds, float zoomOffset, VertexHelper helper)
         {
-            List<float> stops = FindStops(zoomOffset, bounds);
+            List<float> stops = FindStops(zoomOffset, bounds, ListPool<float>.Get());
             if (stops.Count > 0)
             {
                 helper.Clear();
@@ -405,6 +408,7 @@ namespace UnityEngine.UI.Extensions
                     }
                 }
             }
+            ListPool<float>.Release(stops);
         }
 
         float[] GetPositions(List<UIVertex> _vertexList, int index)
@@ -425,9 +429,8 @@ namespace UnityEngine.UI.Extensions
             return positions;
         }
 
-        List<float> FindStops(float zoomOffset, Rect bounds)
+        List<float> FindStops(float zoomOffset, Rect bounds, List<float> stops)
         {
-            List<float> stops = new List<float>();
             var offset = Offset * (1 - zoomOffset);
             var startBoundary = zoomOffset - offset;
             var endBoundary = (1 - zoomOffset) - offset;
