@@ -8,6 +8,7 @@
 /// Remember that for radial and diamond gradients, colors are applied per-vertex so if you have multiple points on your gradient where the color changes and there aren't enough vertices, you won't see all of the colors.
 /// </summary>
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using UnityEngine.Pool;
 
@@ -278,10 +279,13 @@ namespace UnityEngine.UI.Extensions
                 int nCount = _vertexList.Count;
                 for (int i = 0; i < nCount; i += 3)
                 {
-                    float[] positions = GetPositions(_vertexList, i);
-                    List<int> originIndices = ListPool<int>.Get();      // 3
-                    List<UIVertex> starts = ListPool<UIVertex>.Get();   // 3
-                    List<UIVertex> ends = ListPool<UIVertex>.Get();     // 2
+                    var positions = ArrayPool<float>.Shared.Rent(3);
+                    
+                    GetPositions(_vertexList, i, ref positions);
+                    
+                    List<int> originIndices = ListPool<int>.Get();
+                    List<UIVertex> starts = ListPool<UIVertex>.Get();
+                    List<UIVertex> ends = ListPool<UIVertex>.Get();
 
                     for (int s = 0; s < stops.Count; s++)
                     {
@@ -410,6 +414,7 @@ namespace UnityEngine.UI.Extensions
                         helper.AddTriangle(vertexCount - 3, vertexCount - 2, vertexCount - 1);
                     }
 
+                    ArrayPool<float>.Shared.Return(positions);
                     ListPool<int>.Release(originIndices);
                     ListPool<UIVertex>.Release(starts);
                     ListPool<UIVertex>.Release(ends);
@@ -418,9 +423,8 @@ namespace UnityEngine.UI.Extensions
             ListPool<float>.Release(stops);
         }
 
-        float[] GetPositions(List<UIVertex> _vertexList, int index)
+        void GetPositions(List<UIVertex> _vertexList, int index, ref float[] positions)
         {
-            float[] positions = new float[3];
             if (GradientType == Type.Horizontal)
             {
                 positions[0] = _vertexList[index].position.x;
@@ -433,7 +437,6 @@ namespace UnityEngine.UI.Extensions
                 positions[1] = _vertexList[index + 1].position.y;
                 positions[2] = _vertexList[index + 2].position.y;
             }
-            return positions;
         }
         
         List<float> FindStops(float zoomOffset, Rect bounds, List<float> stops)
