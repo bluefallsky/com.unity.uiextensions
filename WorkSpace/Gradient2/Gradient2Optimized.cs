@@ -37,6 +37,9 @@ namespace UnityEngine.UI.Extensions
         [SerializeField]
         UnityEngine.Gradient _effectGradient = new UnityEngine.Gradient() { colorKeys = new GradientColorKey[] { new GradientColorKey(Color.black, 0), new GradientColorKey(Color.white, 1) } };
 
+        private GradientColorKey[] _colorKeys;
+        private GradientAlphaKey[] _alphaKeys;
+        
         #region Properties
         public Blend BlendMode
         {
@@ -276,9 +279,9 @@ namespace UnityEngine.UI.Extensions
                 for (int i = 0; i < nCount; i += 3)
                 {
                     float[] positions = GetPositions(_vertexList, i);
-                    List<int> originIndices = new List<int>(3);
-                    List<UIVertex> starts = new List<UIVertex>(3);
-                    List<UIVertex> ends = new List<UIVertex>(2);
+                    List<int> originIndices = ListPool<int>.Get();      // 3
+                    List<UIVertex> starts = ListPool<UIVertex>.Get();   // 3
+                    List<UIVertex> ends = ListPool<UIVertex>.Get();     // 2
 
                     for (int s = 0; s < stops.Count; s++)
                     {
@@ -406,6 +409,10 @@ namespace UnityEngine.UI.Extensions
                         int vertexCount = helper.currentVertCount;
                         helper.AddTriangle(vertexCount - 3, vertexCount - 2, vertexCount - 1);
                     }
+
+                    ListPool<int>.Release(originIndices);
+                    ListPool<UIVertex>.Release(starts);
+                    ListPool<UIVertex>.Release(ends);
                 }
             }
             ListPool<float>.Release(stops);
@@ -428,21 +435,26 @@ namespace UnityEngine.UI.Extensions
             }
             return positions;
         }
-
+        
         List<float> FindStops(float zoomOffset, Rect bounds, List<float> stops)
         {
             var offset = Offset * (1 - zoomOffset);
             var startBoundary = zoomOffset - offset;
             var endBoundary = (1 - zoomOffset) - offset;
 
-            foreach (var color in EffectGradient.colorKeys)
+            if (_colorKeys == null) _colorKeys = EffectGradient.colorKeys;
+            
+            foreach (var color in _colorKeys)
             {
                 if (color.time >= endBoundary)
                     break;
                 if (color.time > startBoundary)
                     stops.Add((color.time - startBoundary) * Zoom);
             }
-            foreach (var alpha in EffectGradient.alphaKeys)
+
+            if (_alphaKeys == null) _alphaKeys = _effectGradient.alphaKeys;
+            
+            foreach (var alpha in _alphaKeys)
             {
                 if (alpha.time >= endBoundary)
                     break;
